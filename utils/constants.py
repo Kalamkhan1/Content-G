@@ -4,12 +4,14 @@ os.environ["GOOGLE_API_KEY"] = "AIzaSyCIRT1OBOuX6JGn6fktjvDHYys-WgqS8zQ"
 
 
 # This is the message with which the system opens the conversation.
-WELCOME_MSG = "Welcome to the ContentBot cafe. Type `q` to quit. How may I serve you today?"
+WELCOME_MSG = "Welcome to the Content-G Bot. Type `q` to quit. How may I serve you today?"
 
-path=r"C:\Users\kalam\Desktop\Content-G\Content-G-M\chroma_db"
-audio_file=r"C:\Users\kalam\Desktop\Content-G\Content-G-M\a_output.mp3"
-video_file=r"C:\Users\kalam\Desktop\Content-G\Content-G-M\output.mp4"
-output_file=r"C:\Users\kalam\Desktop\Content-G\Content-G-M\merged_output.mp4"
+
+path= os.path.join(os.getcwd(),"chroma_db")
+audio_file=os.path.join(os.getcwd(),"a_output.mp3")
+video_file=os.path.join(os.getcwd(),"output.mp4")
+output_file=os.path.join(os.getcwd(),"merged_output.mp4")
+target_language="ja"
 
 
 TASK_SYSINT_1 = (
@@ -106,7 +108,7 @@ TASK_SYSINT_2 = (
 ANIMATION = """ 
 - Generate Python code using the Manim library. Include all necessary imports and animations.
 - Provide ONLY CODE USING THE MANIM LIBRARY in a clean, correct, and executable format. Avoid any extra explanations or commentary.
-
+- the animation should last as long as the audio length.
 - Structure the animations based on the points provided in the script:
   * Each point in the script corresponds to a separate class inheriting from `Scene`.
   * Start fresh for each point, with no carryover of objects or animations from previous points.
@@ -117,7 +119,7 @@ ANIMATION = """
 
 - Highlight key elements with animations like color changes, size variations, and smooth transitions.
 
-- Avoid loops, external image references, or overly complex camera angles unless explicitly required.
+- Avoid external image references, or overly complex camera angles unless explicitly required.
 
 - Introduce all elements logically, ensuring every object is defined before use.
 

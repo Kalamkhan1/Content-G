@@ -1,12 +1,9 @@
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
-from langchain.document_loaders import PyPDFLoader
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json 
-from langchain_core.messages import ToolMessage
-from orderState.OrderState import OrderState
+from orderState import OrderState
 from chrome.Chrome import db
 from models import llm_with_tools,manim_model
 from langchain_core.messages import AIMessage,ToolMessage
@@ -130,7 +127,7 @@ def human_node(state: OrderState) -> OrderState:
 def builder_node(state: dict) -> dict:
     # Extract the latest tool message
     tool_msg = state.get("messages", [])[-1] if state.get("messages", []) else None
-
+    
     if not tool_msg:
         print("No tool messages in state.")
         return state
@@ -149,15 +146,17 @@ def builder_node(state: dict) -> dict:
                     print("this!!")
                     raise ValueError("No valid 'script' found in function arguments.")
             
-                script = translate_and_text_to_speech(script_en)
+                script,audio_length = translate_and_text_to_speech(script_en)
 
                 prompt = f""" 
                 ```
                 {script_en}
                 ```
+                audio length:``` {audio_length}``` seconds
                 ```
                 {ANIMATION}
                 ```
+       
                 """
 
 

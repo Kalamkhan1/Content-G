@@ -7,3 +7,5 @@ moviepy
 manim
 gTTS
 translatepy
+langchain
+langchain_community

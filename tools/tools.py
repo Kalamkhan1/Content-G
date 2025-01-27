@@ -8,7 +8,7 @@ from translatepy import Translator
 from gtts import gTTS
 import requests
 import time
-from utils import get_audio_length,get_video_length
+from utils import get_audio_length,get_video_length,target_language
 from moviepy import concatenate_videoclips, VideoFileClip
 
 def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
@@ -17,9 +17,13 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
     combines them into one video, and saves the final output in the current directory.
     After generating the video, calculates and prints its duration.
     """
-
     print("Received Manim Code:")
     print(code)
+
+    # Delete the output file if it already exists
+    if os.path.exists(output_file):
+        print(f"Output file '{output_file}' already exists. Deleting it...")
+        os.remove(output_file)
 
     # Extract all Scene classes
     scene_classes = re.findall(r"class\s+(\w+)\(Scene\):", code)
@@ -35,7 +39,7 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
 
         try:
             # Save the Manim code to a temporary file
-            with open(temp_file_path, "w") as file:
+            with open(temp_file_path, "w", encoding="utf-8") as file:
                 file.write(code)
 
             # Check if Manim is installed and accessible
@@ -90,7 +94,9 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
             return f"Combined animation generated and saved as '{output_file}'."
 
         except Exception as e:
+            print(f"Error: {str(e)}")
             return f"Error: {str(e)}"
+
 
   
 @tool
@@ -99,7 +105,6 @@ def translate_and_text_to_speech(script:str) -> str:
     Translates the given script to the target language, converts it into speech, and saves it as an audio file.
     Retries the TTS operation up to retries times if it fails due to network issues.
     """
-    target_language="ja"
     filename='a_output.mp3'
     retries=3
     try:
@@ -123,7 +128,7 @@ def translate_and_text_to_speech(script:str) -> str:
                 if audio_length is not None:
                     print(f"Audio Length: {audio_length} seconds")
 
-                return translated_text
+                return translated_text,audio_length
                 
             except requests.exceptions.RequestException as e:
                 print(f"Attempt {attempt + 1} failed: {e}")

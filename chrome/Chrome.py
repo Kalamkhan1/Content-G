@@ -1,6 +1,6 @@
 from utils import path
-from langchain.vectorstores import Chroma as ChromaVectorStore
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain_community.vectorstores import Chroma as ChromaVectorStore
+from langchain_community.embeddings import SentenceTransformerEmbeddings
 import chromadb
 
 chroma_client = chromadb.PersistentClient(path=path)
