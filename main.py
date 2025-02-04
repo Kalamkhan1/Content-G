@@ -3,7 +3,7 @@ from typing import Literal
 from orderState import OrderState
 from langgraph.graph import StateGraph, START, END
 from nodes import builder_node,chatbot_with_tools,human_node,upload_and_rag_node
-from IPython.display import Image
+
 
 
 def maybe_exit_human_node(state: OrderState) -> Literal["chatbot", "__end__"]:
@@ -25,7 +25,7 @@ def maybe_route_to_tools(state: OrderState) -> str:
     if hasattr(msg, "tool_calls"):
         for tool in msg.tool_calls:
             print(tool)
-            if tool["name"] == "translate_and_text_to_speech":
+            if tool["name"] == "create_script_animate":
                 return "builder"
             elif tool["name"] == "upload_doc":
                 return "upload_and_rag"  
@@ -44,8 +44,6 @@ graph_builder.add_node("chatbot", chatbot_with_tools)
 graph_builder.add_node("human", human_node)
 graph_builder.add_node("upload_and_rag", upload_and_rag_node)
 graph_builder.add_node("builder", builder_node)
-
-
 graph_builder.add_conditional_edges("chatbot", maybe_route_to_tools)
 graph_builder.add_conditional_edges("human", maybe_exit_human_node)
 
@@ -55,7 +53,7 @@ graph_builder.add_edge("upload_and_rag", "chatbot")
 graph_builder.add_edge(START, "chatbot")
 graph_with_menu = graph_builder.compile()
 
-Image(graph_with_menu.get_graph().draw_mermaid_png())
+#Image(graph_with_menu.get_graph().draw_mermaid_png())
 
 
 config = {"recursion_limit": 100}

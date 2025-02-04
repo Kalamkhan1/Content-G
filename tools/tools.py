@@ -8,8 +8,11 @@ from translatepy import Translator
 from gtts import gTTS
 import requests
 import time
-from utils import get_audio_length,get_video_length,target_language
-from moviepy import concatenate_videoclips, VideoFileClip
+from utils import get_audio_length,get_video_length,target_language,split_script,ANIMATION
+from moviepy import concatenate_videoclips, VideoFileClip,concatenate_audioclips,AudioFileClip,AudioClip
+import google.generativeai as genai
+from moviepy.video.fx.Freeze import Freeze
+
 
 def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
     """
@@ -18,7 +21,11 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
     After generating the video, calculates and prints its duration.
     """
     print("Received Manim Code:")
-    print(code)
+    pattern = r"```python\s*(.*?)```"
+    match = re.search(pattern, code, re.DOTALL)
+    if match:
+        # Return the captured group with any leading/trailing whitespace removed.
+        code= match.group(1).strip()
 
     # Delete the output file if it already exists
     if os.path.exists(output_file):
@@ -82,20 +89,26 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
                 video_clips.append(VideoFileClip(generated_video_path))
 
             # Combine all video clips into one
-            final_video = concatenate_videoclips(video_clips)
+            # Combine all video clips into one
             final_video_path = os.path.join(os.getcwd(), output_file)
+            if len(video_clips)>1:
+                final_video = concatenate_videoclips(video_clips)    
+            else :
+                final_video = video_clips[0]
             final_video.write_videofile(final_video_path)
-
+            final_video.close()
             # Calculate and return the video length
             video_length = get_video_length(final_video_path)
             if video_length is not None:
                 print(f"Final video duration: {video_length:.2f} seconds")
 
-            return f"Combined animation generated and saved as '{output_file}'."
+            return f"Combined animation generated."
 
         except Exception as e:
             print(f"Error: {str(e)}")
             return f"Error: {str(e)}"
+
+
 
 
   
@@ -140,3 +153,141 @@ def translate_and_text_to_speech(script:str) -> str:
 
     except Exception as e:
         return f"An error occurred during translation or TTS: {e}"
+
+
+
+
+
+
+@tool
+def create_script_animate(script: str) -> str:
+    """
+    Processes the given script by:
+      1. Splitting it into individual points.
+      2. For each point:
+         - Generating TTS audio.
+         - Generating a Manim video.
+         - Merging the point's audio and video by extending the shorter of the two 
+           to match the duration of the longer.
+      3. Finally, concatenating all the merged point videos (each with audio) into one final video.
+    """
+    # Split the script into individual points.
+    points = split_script(script)
+    print("\n\n", points)
+
+    merged_point_videos = []  # These will store the per-point merged video files
+
+    for idx, point in enumerate(points):
+        print(f"Processing point {idx}: {point['title']}")
+        
+        # 1. Generate audio for the point.
+        text_for_tts = f"{point['title']}\n{point['content']}"
+        try:
+            translated_text, audio_len = translate_and_text_to_speech(text_for_tts)
+        except Exception as e:
+            return f"Error during TTS for point {idx}: {e}"
+        
+        src_audio = os.path.join(os.getcwd(), "a_output.mp3")
+        target_audio = os.path.join(os.getcwd(), f"audio_point_{idx}.mp3")
+        try:
+            if os.path.exists(target_audio):
+                print(f"Output file '{target_audio}' already exists. Deleting it...")
+                os.remove(target_audio)
+            os.rename(src_audio, target_audio)
+        except Exception as e:
+            return f"Error renaming audio file for point {idx}: {e}"
+
+        # 2. Generate the Manim code prompt and create the video.
+        prompt = f"""
+        ```
+        {point['title']}
+        {point['content']}
+        ```
+        audio length:``` {audio_len}``` seconds
+        ```
+        {ANIMATION}
+        ```
+        """
+   
+        manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
+        response = manim_model.generate_content(prompt)
+        print(response.text)
+        response = response.text
+        
+        # Run the generated Manim code, saving the output to a unique filename.
+        output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
+        video_result = run_manim_code(str(response),output_file=output_video_filename)
+        print("\n\n\nyay!!\n\n\n",video_result)
+        if "Error" in video_result:
+            return f"Error during animation generation for point {idx}: {video_result}"
+
+        
+        try:
+            video_clip = VideoFileClip(output_video_filename)
+            audio_clip = AudioFileClip(target_audio)
+        except Exception as e:
+            return f"Error loading clips for point {idx}: {e}"
+        
+        # Determine the maximum duration between audio and video.
+        max_duration = max(video_clip.duration, audio_len)
+        
+        # Extend video by freezing the last frame if it's shorter.
+        if video_clip.duration < max_duration:
+            try:
+                
+                freeze_effect = Freeze(t=video_clip.duration - 0.001,
+                       freeze_duration=(max_duration - video_clip.duration))
+                extended_video = video_clip.fx(freeze_effect.copy().apply())
+                extended_audio=audio_clip
+            except Exception as e:
+                return f"Error freezing video for point {idx}: {e}"
+        else:
+            print("yay!!!!!!!!!!!!!!!!!!!!!2")
+            try:
+                silence_duration = max_duration - audio_len
+                
+                silence_audio = AudioClip(lambda t: 0, duration=silence_duration, fps=audio_clip.fps)
+                extended_audio = concatenate_audioclips([audio_clip, silence_audio])
+                extended_video=video_clip
+            except Exception as e:
+                return f"Error extending audio for point {idx}: {e}"
+        print("yay!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!3")
+        # Set the extended audio to the extended video.
+        merged_clip = extended_video.with_audio(extended_audio)
+        
+        merged_output_filename = os.path.join(os.getcwd(), f"merged_point_{idx}.mp4")
+        if os.path.exists(merged_output_filename):
+            print(f"Output file '{merged_output_filename}' already exists. Deleting it...")
+            os.remove(merged_output_filename)
+        try:
+            merged_clip.write_videofile(merged_output_filename)
+        except Exception as e:
+            return f"Error writing merged video for point {idx}: {e}"
+        merged_point_videos.append(merged_output_filename)
+        print("yay!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!4")
+        # Clean up: close clips to free memory.
+        video_clip.close()
+        audio_clip.close()
+        extended_video.close()
+        extended_audio.close()
+        merged_clip.close()
+        if os.path.exists(output_video_filename):
+            print(f"Output file '{output_video_filename}' already exists. Deleting it...")
+            os.remove(output_video_filename)
+        if os.path.exists(target_audio):
+            print(f"Output file '{target_audio}' already exists. Deleting it...")
+            os.remove(target_audio)
+
+    try:
+        final_clips = [VideoFileClip(v) for v in merged_point_videos]
+        final_video_clip = concatenate_videoclips(final_clips)
+        final_output_file = os.path.join(os.getcwd(), "final_output.mp4")
+        final_video_clip.write_videofile(final_output_file)
+        # Close all clips.
+        for clip in final_clips:
+            clip.close()
+        final_video_clip.close()
+    except Exception as e:
+        return f"Error merging final videos: {e}"
+    
+    return f"Final video generated: {final_output_file}"

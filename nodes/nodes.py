@@ -5,11 +5,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json 
 from orderState import OrderState
 from chrome.Chrome import db
-from models import llm_with_tools,manim_model
+from models import llm_with_tools
 from langchain_core.messages import AIMessage,ToolMessage
-from utils import WELCOME_MSG,TASK_SYSINT,ANIMATION,extract_manim_code,merge_audio_video
-from tools import run_manim_code,translate_and_text_to_speech
-
+from utils import WELCOME_MSG,TASK_SYSINT,split_script
+from tools import create_script_animate
 
 
 def upload_and_rag_node(state: OrderState) -> OrderState:
@@ -50,20 +49,9 @@ def upload_and_rag_node(state: OrderState) -> OrderState:
                        
                             db.add_documents([{"content": document_content}])
 
-                        retriever = db.as_retriever()
-
-                        # Set up the RetrievalQA chain
-                        qa_chain = RetrievalQA.from_chain_type(
-                            llm=llm_with_tools,  # Use LLM with tools for RAG processing
-                            retriever=retriever,
-                            chain_type_kwargs={"prompt": prompt_template},
-                        )
-
-                        # Summarize the document using RAG
-                        summary_response = qa_chain.invoke({"query": "Summarize this document"})
                         
                         # Respond with the summary of the document
-                        return state | {"messages": [ToolMessage(content=f"Document uploaded successfully! Here's a summary: {summary_response}", tool_call_id=id)]}
+                        return state | {"messages": [ToolMessage(content=f"Document uploaded successfully!", tool_call_id=id)]}
 
                     except Exception as e:
                         return state | {"messages": [ToolMessage(content=f"Error uploading document: {str(e)}", tool_call_id=id)]}
@@ -119,7 +107,6 @@ def human_node(state: OrderState) -> OrderState:
     user_input = input("User: ")
 
     if user_input in {"q", "quit", "exit", "goodbye"}:
-        merge_audio_video()
         state["finished"] = True
 
     return state | {"messages": [("user", user_input)]}
@@ -140,31 +127,13 @@ def builder_node(state: dict) -> dict:
             arguments_json = function_call.get("arguments", "{}")
             arguments_dict = json.loads(arguments_json)
 
-            if tool_name == "translate_and_text_to_speech":
+            if tool_name == "create_script_animate":
                 script_en = str(arguments_dict.get("script", ""))
                 if not script_en:
                     print("this!!")
                     raise ValueError("No valid 'script' found in function arguments.")
-            
-                script,audio_length = translate_and_text_to_speech(script_en)
 
-                prompt = f""" 
-                ```
-                {script_en}
-                ```
-                audio length:``` {audio_length}``` seconds
-                ```
-                {ANIMATION}
-                ```
-       
-                """
-
-
-
-                response = manim_model.generate_content(prompt)
-                print("yay1")
-                manim_code = extract_manim_code(response.text)
-                response = run_manim_code(manim_code)
+                response = create_script_animate(script_en)
 
                 return {
                     "messages": [

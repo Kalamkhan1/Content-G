@@ -1,6 +1,6 @@
 import os
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyCIRT1OBOuX6JGn6fktjvDHYys-WgqS8zQ"
+os.environ["GOOGLE_API_KEY"] = "AIzaSyAO-VyTnH98FSnbYIvh1gGhlRNDAUdgFPQ"
 
 
 # This is the message with which the system opens the conversation.
@@ -21,30 +21,24 @@ TASK_SYSINT_1 = (
     "STRICTLY and PRECISELY follow these steps:\n\n"
 
     "1. TOOL USAGE INSTRUCTIONS:\n"
-    "   - If the user asks to explain a concept, IMMEDIATELY call the query_doc tool. DO NOT attempt to answer without using the tool.\n"
     "   - If the user provides a file location (e.g., 'C:\\Users\\something.pdf' or 'upload:/path/to/document'), IMMEDIATELY call the upload_doc tool to process the file. DO NOT ignore or delay this step. You MUST pass the file path to the tool in the required format.\n\n"
-
-    "2. AFTER TOOL USAGE:\n"
-    "   - Once the document is processed, begin the response with 'SUMMARIZATION' and provide a clear, easy-to-read summary of the document's content.\n"
+    "   - If the user asks to explain a concept after providing a file path, IMMEDIATELY call the query_doc tool and begin the response with 'SUMMARIZATION'.\n"
+    "   - Else if the user asks to explain a concept and didnt provide a file path, begin the response with 'SUMMARIZATION' and provide a clear, easy-to-read summary of the document's content.\n "
     "   - After summarizing, ask the user: 'Would you like a structured script for a video explaining this concept?'\n\n"
 
-    "3. FALLBACK RESPONSE:\n"
-    "   - If no document is found, or the document does not contain relevant information,\n"
-    "   - then use your own knowledge to generate an appropriate response to the user's query.\n\n"
-
-    "4. SCRIPT GENERATION:\n"
+    "2. SCRIPT GENERATION:\n"
     "   - If the user agrees, generate a structured script using clear language and relevant examples.\n"
+    "   - The script should have 4 points or less. "
     "   - Format the response as follows:\n\n"
     "     Title\n"
     "     1. [Point 1]\n"
     "     2. [Point 2]\n\n"
 
-    "5. SCRIPT TRANSLATION AND ANIMATION CREATION:\n"
+    "3. SCRIPT TRANSLATION AND ANIMATION CREATION:\n"
     "   - After the script is generated,DEFINITELY ask the user: 'Would you like this script translated and an animation on this script to be created?'\n"
-    "   - If the user agrees, STRICTLY call the translate_and_text_to_speech tool to translate the script and create the animation.\n"
+    "   - If the user agrees, call the create_script_animate tool to translate the script and create the animation.\n"
 
-    "6. IMPORTANT NOTES:\n"
-    "   - ALWAYS attempt to answer the user's query using your knowledge if tools fail or no relevant information is found.\n"
+    "4. IMPORTANT NOTES:\n"
     "   - NEVER ask the user to provide content manually if a tool can be used.\n"
     "   - Respond ONLY with the required output format and avoid adding unnecessary text.\n"
 )
@@ -104,65 +98,37 @@ TASK_SYSINT_2 = (
     
     "Strict adherence to this workflow is mandatory. Ensure clarity, precision, and a structured response at every step."
 )
+ANIMATION = """
+Follow these instructions EXACTLY without any deviation:
 
-ANIMATION = """ 
-- Generate Python code using the Manim library. Include all necessary imports and animations.
-- Provide ONLY CODE USING THE MANIM LIBRARY in a clean, correct, and executable format. Avoid any extra explanations or commentary.
-- the animation should last as long as the audio length.
-- Structure the animations based on the points provided in the script:
-  * Each point in the script corresponds to a separate class inheriting from `Scene`.
-  * Start fresh for each point, with no carryover of objects or animations from previous points.
-  
-- For each class, create animations that are visually appealing, precise, and clear, with smooth transitions and adequate timing (e.g., `self.wait(1)` or more) for readability.
+1. Generate ONLY Python code using the Manim library that directly reflects the point's title and content provided above.
+2. The output MUST be clean, correct, complete, and immediately executable with no extra commentary, notes, or explanations.
+3. The TOTAL animation duration (i.e., the sum of all wait times) MUST EXACTLY match the provided audio length.
+4. Use ONLY basic, standard Manim objects and methods (e.g., Circle, Square, Rectangle, Text, FadeIn, Write, etc.). Do NOT use any undefined, custom, or non-standard objects.
+5. Ensure all methods are valid in the current Manim Community version (for example, use .move_to(ORIGIN) to center objects; do NOT use "to_center" or any undefined method).
+6. UNDER NO CIRCUMSTANCES include ANY file references, file extensions, or code that loads or refers to external images or files. Specifically, do NOT use any image objects like ImageMobject or SVGMobject.
+7. DO NOT include any placeholder text or code implying the use of images.
+8. Introduce and define every element before use. Use smooth transitions, color changes, and size variations strictly for clarity and visual appeal.
+9. Use appropriate parameters (e.g., font_size, color, scale, etc.) to enhance readability.
+10. Format the output EXACTLY as shown below, with no additional text outside the code block.
 
-- Use basic Manim shapes, text, and transformations (e.g., `Circle`, `Square`, `Text`, `Transform`, `FadeIn`, or `Write`) to ensure the code runs immediately. Avoid undefined or custom objects.
+Example format:
 
-- Highlight key elements with animations like color changes, size variations, and smooth transitions.
-
-- Avoid external image references, or overly complex camera angles unless explicitly required.
-
-- Introduce all elements logically, ensuring every object is defined before use.
-
-- Use appropriate parameters (e.g., `font_size`, `color`, `scale`, etc.) to improve readability and aesthetics.
-
-- Ensure the code is complete, clean such that it can be executed right away.
-
-- Format the response as follows:
-
-Example:
-
-MANIM CODE:
 ```python
 from manim import *
 
-# Scene 1: Example Scene
-class ExampleScene(Scene):
+class GravityScene(Scene):
     def construct(self):
-        title = Text("Example Animation", font_size=48).to_edge(UP)
-        self.play(Write(title))
+        earth = Circle(radius=1, color=BLUE)
+        moon = Circle(radius=0.5, color=GRAY).shift(RIGHT * 3)
+        self.play(Create(earth), Create(moon))
         self.wait(1)
-
-        content = Text(
-            "This is an example of how animations are created in Manim.",
-            font_size=36,
-        ).shift(DOWN)
-        self.play(Write(content))
+        arrow = Arrow(moon.get_center(), earth.get_center(), buff=0.1, color=YELLOW)
+        self.play(Create(arrow))
         self.wait(2)
-
-# Scene 2: Basic Shapes
-class BasicShapes(Scene):
-    def construct(self):
-        circle = Circle(color=BLUE).scale(2)
-        square = Square(color=RED).scale(2).shift(RIGHT * 3)
-        self.play(Create(circle))
-        self.play(Transform(circle, square))
-        self.wait(1)
+        self.play(FadeOut(earth), FadeOut(moon), FadeOut(arrow))
+```
 """
-
-
-
-
-
 
 
 TASK_SYSINT=TASK_SYSINT_1

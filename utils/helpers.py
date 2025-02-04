@@ -60,6 +60,20 @@ def get_video_length(filename: str) -> Optional[float]:
         return None
 
 
+def split_script(script: str):
+    sections = re.split(r'(?<=\n)(\d+\. )', script)
+    points = []
+    
+    if sections and sections[0].strip():
+        points.append({"title": "Title", "content": sections[0].strip()})  # Add title or initial text
+    
+    for i in range(1, len(sections) - 1, 2):
+        section_lines = sections[i + 1].strip().split("\n", 1)
+        section_title = sections[i] + section_lines[0]
+        section_content = section_lines[1].strip() if len(section_lines) > 1 else ""
+        points.append({"title": section_title.strip(), "content": section_content})
+    
+    return points
 
 def get_audio_length(filename):
     """
