@@ -10,8 +10,9 @@ import requests
 import time
 from utils import get_audio_length,get_video_length,target_language,split_script,ANIMATION
 from moviepy import concatenate_videoclips, VideoFileClip,concatenate_audioclips,AudioFileClip,AudioClip
-import google.generativeai as genai
 from moviepy.video.fx.Freeze import Freeze
+import google.generativeai as genai
+
 
 
 def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
@@ -20,7 +21,6 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
     combines them into one video, and saves the final output in the current directory.
     After generating the video, calculates and prints its duration.
     """
-    print("Received Manim Code:")
     pattern = r"```python\s*(.*?)```"
     match = re.search(pattern, code, re.DOTALL)
     if match:
@@ -36,7 +36,6 @@ def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
     scene_classes = re.findall(r"class\s+(\w+)\(Scene\):", code)
     if not scene_classes:
         return "Error: Manim code must contain at least one class inheriting from Scene."
-    print("Detected Scene Classes:", scene_classes)
 
     # Use a temporary directory for execution
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -144,9 +143,7 @@ def translate_and_text_to_speech(script:str) -> str:
                 return translated_text,audio_length
                 
             except requests.exceptions.RequestException as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
                 if attempt < retries - 1:
-                    print("Retrying...")
                     time.sleep(2)  # Wait before retrying
                 else:
                     return "Failed to generate audio after multiple attempts."
@@ -173,7 +170,6 @@ def create_script_animate(script: str) -> str:
     """
     # Split the script into individual points.
     points = split_script(script)
-    print("\n\n", points)
 
     merged_point_videos = []  # These will store the per-point merged video files
 
@@ -208,22 +204,24 @@ def create_script_animate(script: str) -> str:
         {ANIMATION}
         ```
         """
-   
-        manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
-        response = manim_model.generate_content(prompt)
-        print(response.text)
-        response = response.text
-        
-        # Run the generated Manim code, saving the output to a unique filename.
-        output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
-        video_result = run_manim_code(str(response),output_file=output_video_filename)
-        print("\n\n\nyay!!\n\n\n",video_result)
-        if "Error" in video_result:
-            return f"Error during animation generation for point {idx}: {video_result}"
+        good=False
+        while not good:
+            manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
+            response = manim_model.generate_content(prompt, generation_config={"temperature": 0.2})
+            response = response.text
+            
+            # Run the generated Manim code, saving the output to a unique filename.
+            output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
+            video_result = run_manim_code(str(response),output_file=output_video_filename)
 
-        
+            if "Error" not in video_result:
+                good=True
+                
         try:
             video_clip = VideoFileClip(output_video_filename)
+            if not hasattr(video_clip, "fps") or video_clip.fps is None:
+                print("Nooooooo!!!!!!!!!!!!")
+                video_clip = video_clip.with_fps(30)
             audio_clip = AudioFileClip(target_audio)
         except Exception as e:
             return f"Error loading clips for point {idx}: {e}"
@@ -237,12 +235,12 @@ def create_script_animate(script: str) -> str:
                 
                 freeze_effect = Freeze(t=video_clip.duration - 0.001,
                        freeze_duration=(max_duration - video_clip.duration))
-                extended_video = video_clip.fx(freeze_effect.copy().apply())
+                extended_video = freeze_effect.apply(video_clip) 
+                
                 extended_audio=audio_clip
             except Exception as e:
                 return f"Error freezing video for point {idx}: {e}"
         else:
-            print("yay!!!!!!!!!!!!!!!!!!!!!2")
             try:
                 silence_duration = max_duration - audio_len
                 
@@ -251,21 +249,20 @@ def create_script_animate(script: str) -> str:
                 extended_video=video_clip
             except Exception as e:
                 return f"Error extending audio for point {idx}: {e}"
-        print("yay!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!3")
         # Set the extended audio to the extended video.
         merged_clip = extended_video.with_audio(extended_audio)
-        
-        merged_output_filename = os.path.join(os.getcwd(), f"merged_point_{idx}.mp4")
+        folder_path = os.path.join(os.getcwd(), f"points")
+        os.makedirs(folder_path, exist_ok=True)
+        merged_output_filename = os.path.join(folder_path, f"merged_point_{idx}.mp4")
         if os.path.exists(merged_output_filename):
             print(f"Output file '{merged_output_filename}' already exists. Deleting it...")
             os.remove(merged_output_filename)
         try:
             merged_clip.write_videofile(merged_output_filename)
-        except Exception as e:
+        except Exception as e: 
             return f"Error writing merged video for point {idx}: {e}"
         merged_point_videos.append(merged_output_filename)
-        print("yay!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!4")
-        # Clean up: close clips to free memory.
+
         video_clip.close()
         audio_clip.close()
         extended_video.close()

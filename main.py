@@ -32,7 +32,7 @@ def maybe_route_to_tools(state: OrderState) -> str:
             elif tool["name"] == "query_doc":
                 return "upload_and_rag"  
 
-    return "human"
+    return '__end__'
 
 
 
@@ -41,20 +41,18 @@ graph_builder = StateGraph(OrderState)
 
 # Add the nodes, including the new tool_node.
 graph_builder.add_node("chatbot", chatbot_with_tools)
-graph_builder.add_node("human", human_node)
 graph_builder.add_node("upload_and_rag", upload_and_rag_node)
 graph_builder.add_node("builder", builder_node)
 graph_builder.add_conditional_edges("chatbot", maybe_route_to_tools)
-graph_builder.add_conditional_edges("human", maybe_exit_human_node)
 
 graph_builder.add_edge("builder", "chatbot")
 graph_builder.add_edge("upload_and_rag", "chatbot")
-# Start the conversation
+
 graph_builder.add_edge(START, "chatbot")
-graph_with_menu = graph_builder.compile()
+graph = graph_builder.compile()
 
 #Image(graph_with_menu.get_graph().draw_mermaid_png())
 
 
 config = {"recursion_limit": 100}
-state = graph_with_menu.invoke({"messages": []},config)
+#state = graph.invoke({"messages": []},config)

@@ -76,27 +76,19 @@ def upload_and_rag_node(state: OrderState) -> OrderState:
     
     except Exception as e:
         # If an error occurs during processing, notify the user
-        return state | {"messages": [ToolMessage(content=f"Error processing request: {str(e)}")]}
+        return {"messages": [ToolMessage(content=f"Error processing request: {str(e)}")]}
 
 
 
 
 def chatbot_with_tools(state: OrderState) -> OrderState:
     """The chatbot with tools. A simple wrapper around the model's own chat interface."""
-    defaults = {"finished": False,}
     
-    if state["messages"]:
-        # Get the message from the state and process based on response_count
-        sum_output = llm_with_tools.invoke([TASK_SYSINT] + state["messages"])
-
-        
-    else:
-        sum_output = AIMessage(content=WELCOME_MSG)
-
-
+    sum_output = llm_with_tools.invoke([TASK_SYSINT] + state["messages"])
+    
     # Set up some defaults if not already set, then pass through the provided state,
     # overriding only the "messages" field.
-    return defaults | state | {"messages": [sum_output]}
+    return state | {"messages": [sum_output]}
 
 
 def human_node(state: OrderState) -> OrderState:

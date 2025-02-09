@@ -65,7 +65,7 @@ def split_script(script: str):
     points = []
     
     if sections and sections[0].strip():
-        points.append({"title": "Title", "content": sections[0].strip()})  # Add title or initial text
+        points.append({"title": "", "content": sections[0].strip()}) 
     
     for i in range(1, len(sections) - 1, 2):
         section_lines = sections[i + 1].strip().split("\n", 1)
