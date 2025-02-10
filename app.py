@@ -1,9 +1,8 @@
 import streamlit as st
 import os
 from main import graph
-from utils import constants
 from langchain_core.messages import AIMessage, HumanMessage
-
+import config
 st.set_page_config(layout='wide', page_title='Content-G Chatbot', page_icon='🍐')
 
 
@@ -33,7 +32,8 @@ with left_col:
     selected_language = st.selectbox("Select Language", list(language_dict.keys()), index=list(language_dict.keys()).index(st.session_state.default_language))
     st.session_state.default_language = selected_language
     st.session_state.target_language = language_dict[selected_language]
-    constants.target_language = language_dict[selected_language]
+    config.target_language = language_dict[selected_language]
+
 
 # 2. File uploader & Chat input
 with main_col:

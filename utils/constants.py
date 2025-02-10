@@ -12,8 +12,6 @@ audio_file=os.path.join(os.getcwd(),"a_output.mp3")
 video_file=os.path.join(os.getcwd(),"output.mp4")
 output_file=os.path.join(os.getcwd(),"merged_output.mp4")
 
-target_language="en"
-
 
 TASK_SYSINT_1 = (
     "system",
@@ -31,7 +29,7 @@ TASK_SYSINT_1 = (
     "   - If the user agrees, generate a structured script using clear language and relevant examples.\n"
     "   - The script should have 4 points or less. "
     "   - Format the response as follows:\n\n"
-    "     Title\n"
+    "     Title:\n"
     "     1.[Point 1]\n"
     "     2.[Point 2]\n\n"
 
@@ -65,6 +63,7 @@ Follow these instructions EXACTLY without deviation:
 
 Example: 
 ```python
+
 from manim import *
 import numpy as np
 
@@ -80,9 +79,11 @@ class PolarDemo(Scene):
         layout = VGroup(axes, table).arrange(RIGHT, buff=LARGE_BUFF)
 
         self.play(DrawBorderThenFill(axes), FadeIn(table), run_time=3 * tempo)
+        self.wait(tempo)  # Pause after initial setup
+
         tvals = [0, PI / 6, PI / 2, PI, 3 * PI / 2]
         colors = [BLUE, GREEN, RED, ORANGE, PURPLE]
-        
+
         for tval, color in zip(tvals, colors):
             r = polarf(tval)
             vec = Arrow(start=axes.polar_to_point(0, 0),
@@ -90,15 +91,23 @@ class PolarDemo(Scene):
                         color=color, buff=0)
             dot = Dot(axes.polar_to_point(r, tval), color=color)
             self.play(Create(vec), run_time=tempo)
+            self.wait(0.5 * tempo)  # Short pause
             self.play(FadeIn(dot), FadeOut(vec), run_time=tempo)
-        
+            self.wait(0.5 * tempo)  # Short pause
+
         t = ValueTracker(0)
         dot = always_redraw(lambda: Dot(axes.polar_to_point(polarf(t.get_value()), t.get_value()), color=RED))
         curve = always_redraw(lambda: ParametricFunction(lambda u: axes.polar_to_point(polarf(u), u),
                                                           t_range=[0, t.get_value()], color=RED, stroke_width=6))
+
         self.play(FadeIn(dot, curve), run_time=tempo)
+        self.wait(tempo)  # Pause before animation starts
+
         self.play(t.animate.set_value(2 * PI), run_time=6 * tempo)
+        self.wait(tempo)  # Pause after curve animation
+
         self.play(FadeOut(dot, curve, table, axes), run_time=2 * tempo)
+
 ``` 
 """
 

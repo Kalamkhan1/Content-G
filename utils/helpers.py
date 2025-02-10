@@ -2,8 +2,11 @@
 from typing import Optional
 from pydub.utils import mediainfo
 import re
-from moviepy import VideoFileClip, AudioFileClip
+from moviepy import VideoFileClip, AudioFileClip, concatenate_videoclips
 from utils import audio_file,video_file,output_file
+import subprocess
+import tempfile
+import os
 def merge_audio_video():
     """
     Merges an audio file and a video file, limiting the output to the length of the shorter file.
@@ -60,20 +63,15 @@ def get_video_length(filename: str) -> Optional[float]:
         return None
 
 
+import re
+
 def split_script(script: str):
-    sections = re.split(r'(?<=\n)(\d+\. )', script)
-    points = []
-    
-    if sections and sections[0].strip():
-        points.append({"title": "", "content": sections[0].strip()}) 
-    
-    for i in range(1, len(sections) - 1, 2):
-        section_lines = sections[i + 1].strip().split("\n", 1)
-        section_title = sections[i] + section_lines[0]
-        section_content = section_lines[1].strip() if len(section_lines) > 1 else ""
-        points.append({"title": section_title.strip(), "content": section_content})
-    
+    print(script)
+    paragraphs = re.split(r'\n\s*\n+', script.strip()) 
+    points = [{"content": paragraph.strip()} for paragraph in paragraphs if paragraph.strip()]
+    print(len(points))
     return points
+
 
 def get_audio_length(filename):
     """
@@ -107,3 +105,99 @@ def extract_manim_code(response: str) -> str:
         return code
     else:
         return "Error: Manim code not found in the response."
+
+
+
+
+def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
+    """
+    Runs the specified Manim code, generates animations for all Scene classes,
+    combines them into one video, and saves the final output in the current directory.
+    After generating the video, calculates and prints its duration.
+    """
+    pattern = r"```python\s*(.*?)```"
+    match = re.search(pattern, code, re.DOTALL)
+    if match:
+        # Return the captured group with any leading/trailing whitespace removed.
+        code= match.group(1).strip()
+
+    # Delete the output file if it already exists
+    if os.path.exists(output_file):
+        print(f"Output file '{output_file}' already exists. Deleting it...")
+        os.remove(output_file)
+
+    # Extract all Scene classes
+    scene_classes = re.findall(r"class\s+(\w+)\(Scene\):", code)
+    if not scene_classes:
+        return "Error: Manim code must contain at least one class inheriting from Scene."
+
+    # Use a temporary directory for execution
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_file_path = os.path.join(temp_dir, "temp_manim_script.py")
+        output_dir = os.path.join(temp_dir, "output")
+        os.makedirs(output_dir, exist_ok=True)
+
+        try:
+            # Save the Manim code to a temporary file
+            with open(temp_file_path, "w", encoding="utf-8") as file:
+                file.write(code)
+
+            # Check if Manim is installed and accessible
+            manim_check = subprocess.run(
+                ["manim", "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if manim_check.returncode != 0:
+                return f"Error: Manim is not installed or not accessible.\n{manim_check.stderr}"
+
+            # Render each Scene class separately
+            video_clips = []
+            for scene_class in scene_classes:
+                result = subprocess.run(
+                    ["manim", temp_file_path, scene_class, "-ql", "--media_dir", output_dir],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+
+                if result.returncode != 0:
+                    return f"Error while generating animation for {scene_class}:\n{result.stderr}"
+
+                # Locate the generated video file
+                generated_video_path = None
+                for root, _, files in os.walk(output_dir):
+                    for file in files:
+                        if file.endswith(".mp4") and scene_class in file:
+                            generated_video_path = os.path.join(root, file)
+                            break
+                    if generated_video_path:
+                        break
+
+                if not generated_video_path:
+                    return f"Error: Animation for {scene_class} generated but output file not found."
+
+                # Load the video into MoviePy for combining
+                video_clips.append(VideoFileClip(generated_video_path))
+
+            # Combine all video clips into one
+            # Combine all video clips into one
+            final_video_path = os.path.join(os.getcwd(), output_file)
+            if len(video_clips)>1:
+                final_video = concatenate_videoclips(video_clips)    
+            else :
+                final_video = video_clips[0]
+            final_video.write_videofile(final_video_path)
+            final_video.close()
+            # Calculate and return the video length
+            video_length = get_video_length(final_video_path)
+            if video_length is not None:
+                print(f"Final video duration: {video_length:.2f} seconds")
+
+            return f"Combined animation generated."
+
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return f"Error: {str(e)}"
+

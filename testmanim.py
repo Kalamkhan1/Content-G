@@ -1,35 +1,45 @@
 from manim import *
-import numpy as np
 
-class PolarDemo(Scene):
+class PythagoreanTheorem(Scene):
     def construct(self):
-        def polarf(theta):
-            return 2 - 2 * np.sin(theta)
+        a = 3
+        b = 4
+        c = (a**2 + b**2) ** 0.5  
 
-        self.camera.background_color = WHITE
-        tempo = 1.5
-        axes = PolarPlane(radius_max=4).add_coordinates()
-        table = MathTable([[r"\theta", r"r=2-2\sin\theta"],
-                           [0, 2], [r"\pi/6", 1], [r"\pi/2", 0], [r"\pi", 2], [r"3\pi/2", 4]]).scale(0.7)
-        layout = VGroup(axes, table).arrange(RIGHT, buff=LARGE_BUFF)
+        A = np.array([0, 0, 0])
+        B = np.array([a, 0, 0])
+        C = np.array([0, b, 0])
 
-        self.play(DrawBorderThenFill(axes), FadeIn(table), run_time=3 * tempo)
-        tvals = [0, PI / 6, PI / 2, PI, 3 * PI / 2]
-        colors = [BLUE, GREEN, RED, ORANGE, PURPLE]
-        
-        for tval, color in zip(tvals, colors):
-            r = polarf(tval)
-            vec = Arrow(start=axes.polar_to_point(0, 0),
-                        end=axes.polar_to_point(r, tval),
-                        color=color, buff=0)
-            dot = Dot(axes.polar_to_point(r, tval), color=color)
-            self.play(Create(vec), run_time=tempo)
-            self.play(FadeIn(dot), FadeOut(vec), run_time=tempo)
-        
-        t = ValueTracker(0)
-        dot = always_redraw(lambda: Dot(axes.polar_to_point(polarf(t.get_value()), t.get_value()), color=RED))
-        curve = always_redraw(lambda: ParametricFunction(lambda u: axes.polar_to_point(polarf(u), u),
-                                                          t_range=[0, t.get_value()], color=RED, stroke_width=6))
-        self.play(FadeIn(dot, curve), run_time=tempo)
-        self.play(t.animate.set_value(2 * PI), run_time=6 * tempo)
-        self.play(FadeOut(dot, curve, table, axes), run_time=2 * tempo)
+        triangle = Polygon(A, B, C, color=WHITE, fill_opacity=0.5)
+        self.play(Create(triangle), run_time=2)
+        self.wait(1)
+
+        square_a = Square(side_length=a, color=BLUE, fill_opacity=0.5).move_to(B + np.array([0, a/2, 0])).rotate(90 * DEGREES)
+        square_b = Square(side_length=b, color=GREEN, fill_opacity=0.5).move_to(C + np.array([-b/2, 0, 0]))
+        square_c = Square(side_length=c, color=YELLOW, fill_opacity=0.5).move_to(A + B + np.array([-a/2, b/2, 0]))
+
+        self.play(FadeIn(square_a), FadeIn(square_b), FadeIn(square_c), run_time=2)
+        self.wait(1)
+
+        square_a_copy = square_a.copy()
+        square_b_copy = square_b.copy()
+
+        self.play(
+            square_a_copy.animate.rotate(-90 * DEGREES).move_to(square_c.get_center() + np.array([c/4, -c/4, 0])),
+            run_time=2
+        )
+        self.wait(0.5)
+
+        self.play(
+            square_b_copy.animate.rotate(90 * DEGREES).move_to(square_c.get_center() + np.array([-c/4, c/4, 0])),
+            run_time=2
+        )
+        self.wait(1)
+
+        self.play(FadeOut(square_a_copy, square_b_copy, triangle, square_a, square_b), run_time=2)
+
+        equation = MathTex("a^2 + b^2 = c^2").move_to(ORIGIN)
+        self.play(Write(equation), run_time=2)
+        self.wait(1)
+
+        self.play(FadeOut(equation), run_time=2)

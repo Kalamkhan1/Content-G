@@ -1,112 +1,15 @@
 import os
-import re
-import subprocess
-import tempfile
-from typing import Optional
+
 from langchain.tools import tool
 from translatepy import Translator
 from gtts import gTTS
 import requests
 import time
-from utils import get_audio_length,get_video_length,target_language,split_script,ANIMATION
+from utils import get_audio_length,split_script,ANIMATION,run_manim_code
 from moviepy import concatenate_videoclips, VideoFileClip,concatenate_audioclips,AudioFileClip,AudioClip
 from moviepy.video.fx.Freeze import Freeze
 import google.generativeai as genai
-
-
-
-def run_manim_code(code: str, output_file: Optional[str] = "output.mp4") -> str:
-    """
-    Runs the specified Manim code, generates animations for all Scene classes,
-    combines them into one video, and saves the final output in the current directory.
-    After generating the video, calculates and prints its duration.
-    """
-    pattern = r"```python\s*(.*?)```"
-    match = re.search(pattern, code, re.DOTALL)
-    if match:
-        # Return the captured group with any leading/trailing whitespace removed.
-        code= match.group(1).strip()
-
-    # Delete the output file if it already exists
-    if os.path.exists(output_file):
-        print(f"Output file '{output_file}' already exists. Deleting it...")
-        os.remove(output_file)
-
-    # Extract all Scene classes
-    scene_classes = re.findall(r"class\s+(\w+)\(Scene\):", code)
-    if not scene_classes:
-        return "Error: Manim code must contain at least one class inheriting from Scene."
-
-    # Use a temporary directory for execution
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_file_path = os.path.join(temp_dir, "temp_manim_script.py")
-        output_dir = os.path.join(temp_dir, "output")
-        os.makedirs(output_dir, exist_ok=True)
-
-        try:
-            # Save the Manim code to a temporary file
-            with open(temp_file_path, "w", encoding="utf-8") as file:
-                file.write(code)
-
-            # Check if Manim is installed and accessible
-            manim_check = subprocess.run(
-                ["manim", "--version"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            if manim_check.returncode != 0:
-                return f"Error: Manim is not installed or not accessible.\n{manim_check.stderr}"
-
-            # Render each Scene class separately
-            video_clips = []
-            for scene_class in scene_classes:
-                result = subprocess.run(
-                    ["manim", temp_file_path, scene_class, "-ql", "--media_dir", output_dir],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                )
-
-                if result.returncode != 0:
-                    return f"Error while generating animation for {scene_class}:\n{result.stderr}"
-
-                # Locate the generated video file
-                generated_video_path = None
-                for root, _, files in os.walk(output_dir):
-                    for file in files:
-                        if file.endswith(".mp4") and scene_class in file:
-                            generated_video_path = os.path.join(root, file)
-                            break
-                    if generated_video_path:
-                        break
-
-                if not generated_video_path:
-                    return f"Error: Animation for {scene_class} generated but output file not found."
-
-                # Load the video into MoviePy for combining
-                video_clips.append(VideoFileClip(generated_video_path))
-
-            # Combine all video clips into one
-            # Combine all video clips into one
-            final_video_path = os.path.join(os.getcwd(), output_file)
-            if len(video_clips)>1:
-                final_video = concatenate_videoclips(video_clips)    
-            else :
-                final_video = video_clips[0]
-            final_video.write_videofile(final_video_path)
-            final_video.close()
-            # Calculate and return the video length
-            video_length = get_video_length(final_video_path)
-            if video_length is not None:
-                print(f"Final video duration: {video_length:.2f} seconds")
-
-            return f"Combined animation generated."
-
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            return f"Error: {str(e)}"
-
+import config
 
 
 
@@ -121,7 +24,7 @@ def translate_and_text_to_speech(script:str) -> str:
     retries=3
     try:
         translator = Translator()
-        # Translate the text to the target language
+        target_language=config.target_language
         translated_result = translator.translate(script, target_language)
         translated_text = translated_result.result  # Get translated text
         print(f"Translated Text:\n{translated_text}\n")
@@ -174,14 +77,14 @@ def create_script_animate(script: str) -> str:
     merged_point_videos = []  # These will store the per-point merged video files
 
     for idx, point in enumerate(points):
-        print(f"Processing point {idx}: {point['title']}")
+        print(f"Processing point {idx}")
         
         # 1. Generate audio for the point.
-        text_for_tts = f"{point['title']}\n{point['content']}"
+        text_for_tts = f"{point['content']}"
         try:
             translated_text, audio_len = translate_and_text_to_speech(text_for_tts)
         except Exception as e:
-            return f"Error during TTS for point {idx}: {e}"
+            continue
         
         src_audio = os.path.join(os.getcwd(), "a_output.mp3")
         target_audio = os.path.join(os.getcwd(), f"audio_point_{idx}.mp3")
@@ -195,28 +98,34 @@ def create_script_animate(script: str) -> str:
 
         # 2. Generate the Manim code prompt and create the video.
         prompt = f"""
-        ```
-        {point['title']}
-        {point['content']}
-        ```
-        audio length:``` {audio_len}``` seconds
-        ```
-        {ANIMATION}
-        ```
+{point['content']}
+audio length: {audio_len} seconds
+
+{ANIMATION}
+
+Aim for ERROR-FREE execution while acknowledging these errors:
         """
         good=False
-        while not good:
+        it=0
+        while not good and it<6:
+            it+=1
+            print(it,"YYyAAAAAAAAAAAAAAAAYYY")
             manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
-            response = manim_model.generate_content(prompt, generation_config={"temperature": 0.2})
+            response = manim_model.generate_content(prompt, generation_config={"temperature": 0.15})
             response = response.text
             
             # Run the generated Manim code, saving the output to a unique filename.
             output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
             video_result = run_manim_code(str(response),output_file=output_video_filename)
-
             if "Error" not in video_result:
                 good=True
-                
+            print(video_result)
+            prompt+="\n" + next((line for line in reversed(video_result.split("\n")) if line.strip()), "")
+            print(next((line for line in reversed(video_result.split("\n")) if line.strip()), ""))
+            
+        print(prompt)
+        if it==6:
+            continue
         try:
             video_clip = VideoFileClip(output_video_filename)
             if not hasattr(video_clip, "fps") or video_clip.fps is None:
