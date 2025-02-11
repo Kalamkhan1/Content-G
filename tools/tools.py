@@ -98,21 +98,23 @@ def create_script_animate(script: str) -> str:
 
         # 2. Generate the Manim code prompt and create the video.
         prompt = f"""
-{point['content']}
-audio length: {audio_len} seconds
+        {point['content']}
+        audio length: {audio_len} seconds
 
-{ANIMATION}
+        {ANIMATION}
 
-Aim for ERROR-FREE execution while acknowledging these errors:
+        Maintain correctness while taking note of these errors:
         """
         good=False
         it=0
+        manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
+        chat = manim_model.start_chat()
         while not good and it<6:
             it+=1
             print(it,"YYyAAAAAAAAAAAAAAAAYYY")
-            manim_model = genai.GenerativeModel('gemini-1.5-flash-8b-latest')
-            response = manim_model.generate_content(prompt, generation_config={"temperature": 0.15})
+            response = chat.send_message(prompt, generation_config={"temperature": 0.2})
             response = response.text
+            print(response,"hiiiii!")
             
             # Run the generated Manim code, saving the output to a unique filename.
             output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
@@ -120,10 +122,9 @@ Aim for ERROR-FREE execution while acknowledging these errors:
             if "Error" not in video_result:
                 good=True
             print(video_result)
-            prompt+="\n" + next((line for line in reversed(video_result.split("\n")) if line.strip()), "")
+            prompt="\n\t\t Got Error:\n\t\t" + next((line for line in reversed(video_result.split("\n")) if line.strip()), "") + "\n\t\tGive Corrected code in the proper format."
             print(next((line for line in reversed(video_result.split("\n")) if line.strip()), ""))
             
-        print(prompt)
         if it==6:
             continue
         try:

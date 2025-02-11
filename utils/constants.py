@@ -23,10 +23,10 @@ TASK_SYSINT_1 = (
     "   - If the user provides a file location (e.g., 'C:\\Users\\something.pdf' or 'upload:/path/to/document'), IMMEDIATELY call the upload_doc tool to process the file. DO NOT ignore or delay this step. You MUST pass the file path to the tool in the required format.\n\n"
     "   - If the user asks to explain a concept after providing a file path, IMMEDIATELY call the query_doc tool and begin the response with 'SUMMARIZATION'.\n"
     "   - Else if the user asks to explain a concept and didnt provide a file path, begin the response with 'SUMMARIZATION' and provide a clear, easy-to-read summary of the document's content.\n "
-    "   - After summarizing, ask the user: 'Would you like a structured script for a video explaining this concept?'\n\n"
+    "   - After summarizing, ask the user: 'Would you like a structured script explaining this concept?'\n\n"
 
     "2. SCRIPT GENERATION:\n"
-    "   - If the user agrees, generate a structured script using clear language and relevant examples.\n"
+    "   - If the user agrees, generate a structured script using clear language and relevant examples explaining this concept.\n"
     "   - The script should have 4 points or less. "
     "   - Format the response as follows:\n\n"
     "     Title:\n"
@@ -58,8 +58,7 @@ Follow these instructions EXACTLY without deviation:
 9. Define every element before use. Use smooth transitions, motion paths, scaling, and color changes for visual appeal.  
 10. Use appropriate parameters (e.g., font_size, color, scale) for readability. Keep text concise to fit within the screen.  
 11. Format the output EXACTLY as shown below—NO extra text outside the code block.  
-12. Instead of `wait()`, end the animation with a smooth fading effect for all objects. 
-
+12. Think Step by Step to generate proper code.
 
 Example: 
 ```python
@@ -105,8 +104,6 @@ class PolarDemo(Scene):
 
         self.play(t.animate.set_value(2 * PI), run_time=6 * tempo)
         self.wait(tempo)  # Pause after curve animation
-
-        self.play(FadeOut(dot, curve, table, axes), run_time=2 * tempo)
 
 ``` 
 """
