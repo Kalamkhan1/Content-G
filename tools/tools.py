@@ -114,7 +114,7 @@ def create_script_animate(script: str) -> str:
             print(it,"YYyAAAAAAAAAAAAAAAAYYY")
             response = chat.send_message(prompt, generation_config={"temperature": 0.2})
             response = response.text
-            print(response,"hiiiii!")
+            print(response)
             
             # Run the generated Manim code, saving the output to a unique filename.
             output_video_filename = os.path.join(os.getcwd(), f"point_video_{idx}.mp4")
