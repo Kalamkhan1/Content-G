@@ -58,7 +58,6 @@ Follow these instructions EXACTLY without deviation:
 9. Define every element before use. Use smooth transitions, motion paths, scaling, and color changes for visual appeal.  
 10. Use appropriate parameters (e.g., font_size, color, scale) for readability. Keep text concise to fit within the screen.  
 11. Format the output EXACTLY as shown below—NO extra text outside the code block.  
-12. Think Step by Step to generate proper code.
 
 Example: 
 ```python
