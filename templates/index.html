@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content-G Bot</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* === Global Styles === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E6F0FA; /* Very light blue */
+            color: #3C6EAB; /* Darker blue */
+        }
+        a {
+            text-decoration: none;
+        }
+
+        /* === Home Section === */
+        #home {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-content {
+            text-align: center;
+            max-width: 700px;
+            padding: 2rem;
+            z-index: 1;
+        }
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #3C6EAB;
+            animation: fadeIn 1s ease-in;
+        }
+        .hero-content p {
+            font-size: 1.25rem;
+            font-weight: 400;
+            margin-bottom: 2.5rem;
+            color: #3C6EAB;
+            opacity: 0.9;
+        }
+        .btn-get-started {
+            background-color: #4D9DE0; /* Light blue */
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding: 0.75rem 2.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-get-started:hover {
+            background-color: #3C89C9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(77, 157, 224, 0.3);
+        }
+
+        /* Floating Visuals */
+        .visuals {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .visuals .vector {
+            position: absolute;
+            opacity: 0.7;
+            transition: transform 0.3s ease;
+        }
+        .visuals .play-icon {
+            top: 20%;
+            left: 15%;
+            width: 80px;
+            height: 80px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234D9DE0"><path d="M8 5v14l11-7z"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: float 5s ease-in-out infinite;
+        }
+        .visuals .film-icon {
+            bottom: 25%;
+            right: 20%;
+            width: 70px;
+            height: 70px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234D9DE0"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: float 6s ease-in-out infinite reverse;
+        }
+        .visuals .ai-logo {
+            top: 60%;
+            left: 70%;
+            width: 60px;
+            height: 60px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234D9DE0"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm-1-13h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: float 4s ease-in-out infinite;
+        }
+        .visuals .bot-icon {
+            top: 30%;
+            right: 10%;
+            width: 65px;
+            height: 65px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234D9DE0"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v7c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-7c1.66 0 3-1.34 3-3s-1.34-3-3-3zm-2 10H6v-7h12v7zm-6-5c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>') no-repeat center;
+            background-size: contain;
+            animation: float 5.5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .hero-content p {
+                font-size: 1rem;
+            }
+            .visuals .vector {
+                width: 50px;
+                height: 50px;
+            }
+            .visuals .ai-logo,
+            .visuals .bot-icon {
+                display: none; /* Reduce clutter on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <section id="home">
+        <div class="hero-content">
+            <h1>Unleash Knowledge Visually</h1>
+            <p>AI-powered visual learning through intelligent chat and video generation.</p>
+            <a href="/chat" class="btn btn-get-started">Get Started</a>
+        </div>
+        <div class="visuals">
+            <div class="vector play-icon"></div>
+            <div class="vector film-icon"></div>
+            <div class="vector ai-logo"></div>
+            <div class="vector bot-icon"></div>
+        </div>
+    </section>
+</body>
+</html>
