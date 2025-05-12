@@ -1,7 +1,7 @@
 import os
 from langchain.docstore.document import Document
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyAO-VyTnH98FSnbYIvh1gGhlRNDAUdgFPQ"
+os.environ["GOOGLE_API_KEY"] = "Your Google API KEY"
 
 
 # This is the message with which the system opens the conversation.
