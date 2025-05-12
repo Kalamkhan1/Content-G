@@ -60,7 +60,7 @@ The process includes:
 4. Update your Google API key:
 
    * Navigate to the `utils/constants` folder.
-   * Open the relevant constants file (e.g., `api_keys.py`).
+   * Open the constants.py.
    * Replace the placeholder value of `GOOGLE_API_KEY` with your actual API key.
 5. Run the application:
 
@@ -75,10 +75,6 @@ The process includes:
 * Mohammed Abdul Kalam Khan
 * Abdul Hai
 * Mahammed Saadullah
-
-### License
-
-Apache License 2.0
 
 ### Project Status
 
