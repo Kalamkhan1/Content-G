@@ -1,0 +1,15 @@
+langgraph==0.2.45 
+langchain-google-genai==2.0.4
+pypdf
+sentence-transformers
+chromadb
+moviepy
+manim
+gTTS
+translatepy
+langchain
+langchain_community
+speechrecognition
+streamlit
+duckduckgo_search
+opik

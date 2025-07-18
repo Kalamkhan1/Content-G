@@ -1,0 +1,272 @@
+Examples of manim code animations
+
+1.This code creates a Manim animation that visually demonstrates the step-by-step calculation of the definite integral 
+from manim import *
+
+class BasicDefiniteIntegral(Scene):
+    def construct(self):
+    
+        problem = MathTex(r"\int_{0}^{2} x^3 \,dx")
+        self.play(Write(problem))
+        self.wait(2)
+
+
+        explanation = Text("Calculate the definite integral using limits:", font_size=24).to_edge(UP)
+        self.play(Write(explanation))
+        self.wait(3)
+
+        integral_step = MathTex(r"= \left[ \frac{x^{3+1}}{3+1} \right]_0^2")
+        self.play(ReplacementTransform(problem.copy(), integral_step))
+        self.wait(2)
+
+
+        limits_substituted = MathTex(r"= \left[ \frac{x^4}{4} \right]_{0}^{2}")
+        self.play(ReplacementTransform(integral_step, limits_substituted))
+        self.wait(2)
+
+
+        evaluation = MathTex(r"= \frac{2^4}{4} - \frac{0^4}{4}")
+        self.play(ReplacementTransform(limits_substituted, evaluation))
+        self.wait(2)
+
+        final_answer = MathTex(r"= 4")
+        self.play(ReplacementTransform(evaluation, final_answer))
+        self.wait(2)
+
+        self.play(FadeOut(explanation), FadeOut(final_answer))
+        self.wait(1)
+
+
+        result = Text("Integral result is 4.", font_size=36)
+        self.play(Write(result))
+        self.wait(2)
+
+        self.clear()
+        self.wait(1)
+
+
+2.Shows two squares appearing using the GrowFromPoint animation
+from manim import *
+
+class GrowFromPointExample(Scene):
+    def construct(self):
+        text = Text("GrowFromPoint - Example")
+        self.add(text)
+
+
+        square1 = Square()
+        self.play(GrowFromPoint(square1, point=DOWN*3))
+
+
+        self.play(Transform(text, Text("Next square grows from a point").shift(UP*2.5)))
+        square2 = Square()
+        specific_point = RIGHT*3 + UP*2
+        self.play(GrowFromPoint(square2, point=specific_point))
+
+
+        self.remove(square1, square2)
+
+3.Animates a sine wave being dynamically drawn
+
+from manim import *
+
+class WavePath(VGroup):
+    def __init__(self, wave_freq, amplitude, start_point, end_point, color=BLUE):
+        super().__init__()
+
+        self.wave_freq = wave_freq
+        self.amplitude = amplitude
+        self.start_point = start_point
+        self.end_point = end_point
+        self.color = color
+
+        self.path = VMobject(color=self.color)
+        self.path.set_points_as_corners([self.start_point, self.start_point])
+
+        self.add(self.path)
+        self.time = 0
+
+        def update_wave(self, dt):
+        self.time += dt
+        prev_point = self.path.points[-1]
+        new_point = prev_point + RIGHT * dt
+        new_point[1] = self.amplitude * np.sin(self.wave_freq * self.time) + self.start_point[1]
+
+        if new_point[0] > self.end_point[0]:
+        self.path.set_points_as_corners([*self.path.points, self.end_point])
+        self.path.clear_updaters()
+        else:
+        self.path.set_points_as_corners([*self.path.points, new_point])
+
+        def start_wave(self):
+        self.path.add_updater(self.update_wave)
+
+
+class WaveScene(Scene):
+    def construct(self):
+        start_point = LEFT * 4
+        end_point = RIGHT * 4
+        wave = WavePath(
+        wave_freq=2 * PI,
+        amplitude=1,
+        start_point=start_point,
+        end_point=end_point
+        )
+        self.add(wave)
+        wave.start_wave()
+
+        image = ImageMobject("sine_waves.jpg")  # Change this to your image file name
+        image.scale(0.4)
+        image.to_corner(UR)
+        self.play(FadeIn(image), run_time=1)
+
+        self.play(ShowCreation(wave.path), run_time=4)
+        self.wait()
+
+4.Demonstrates a chemistry concept showing how atoms form an ionic compound,
+starting with an oxygen, a metal, and an electron, then forming positive and negative ions, combining them into a compound, and finally moving the compound along a zigzag path before fading out.
+code:
+from manim import *
+
+def oxygen():
+    return Circle(radius=0.4, color=BLUE).set_fill(BLUE_E, opacity=0.5).set_stroke(width=2).shift(LEFT)
+
+def metal():
+    return Square(side_length=0.6, color=GRAY).set_fill(GRAY_E, opacity=0.5).set_stroke(width=2)
+
+def electron():
+    return Dot(radius=0.15, color=YELLOW).shift(RIGHT)
+
+def positive():
+    return Text("+", font_size=72, color=RED)
+
+def negative():
+    return Text("-", font_size=72, color=BLUE)
+
+class ChemistryAnimation(Scene):
+    def construct(self):
+        molecule_group = VGroup(oxygen(), metal(), electron())
+        molecule_group.arrange(RIGHT, buff=1)
+
+        image = ImageMobject("chemical_bond.jpg")  
+        image.scale(0.5)
+        image.to_corner(UR)
+        self.play(FadeIn(image), run_time=1)
+
+        self.play(Create(molecule_group))
+        self.wait(2)
+
+        positive_ion = positive()
+        self.play(FadeIn(positive_ion, shift=UP))
+        self.wait(1)
+
+        negative_ion = negative()
+        self.play(FadeIn(negative_ion, shift=DOWN))
+        self.wait(1)
+
+        compound = VGroup(positive_ion, negative_ion)
+        compound.arrange(RIGHT, buff=0.5)
+        self.play(Transform(molecule_group, compound))
+        self.wait(2)
+
+        zigzag_path = VMobject()
+        zigzag_path.set_points_as_corners([UL, UR, DL, DR, ORIGIN])
+        self.play(MoveAlongPath(compound, zigzag_path), run_time=4, rate_func=linear)
+        self.wait(2)
+
+        self.play(FadeOut(compound), FadeOut(image))
+        self.wait(1)
+
+
+5.Explains and derives the solution to the differential equation of simple harmonic motion,
+starting with an equation.
+code:
+from manim import *
+
+class SimpleHarmonicOscillator(Scene):
+    def construct(self):
+
+        diff_eq = MathTex(r"m\frac{d^2 x}{dt^2} + kx = 0")
+        self.play(Write(diff_eq))
+        self.wait(1)
+
+
+        variables_explanation = Text("m: mass, k: spring constant", font_size=24).to_edge(UP)
+        self.play(FadeIn(variables_explanation, shift=UP))
+        self.wait(2)
+
+
+        char_eq = MathTex(r"\lambda^2 + \frac{k}{m} = 0")
+        self.play(ReplacementTransform(diff_eq.copy(), char_eq))
+        self.wait(1)
+
+
+        explanation = Text("Characteristic equation", font_size=24).to_edge(UP)
+        self.play(Transform(variables_explanation, explanation))
+        self.wait(2)
+
+        roots = MathTex(r"\lambda = \pm i\sqrt{\frac{k}{m}}")
+        self.play(ReplacementTransform(char_eq, roots))
+        self.wait(1)
+
+        general_solution = MathTex(r"x(t) = A\cos\left(\sqrt{\frac{k}{m}}t\right) + B\sin\left(\sqrt{\frac{k}{m}}t\right)")
+        self.play(Write(general_solution))
+        self.wait(1)
+
+        explanation2 = Text("General solution for simple harmonic motion", font_size=24).to_edge(UP)
+        self.play(Transform(variables_explanation, explanation2))
+        self.wait(2)
+
+        self.clear()
+        final_message = Text("Visualizing Simple Harmonic Motion", font_size=32)
+        self.play(FadeIn(final_message, shift=UP))
+        self.wait(1)
+        self.play(Write(general_solution))
+        self.wait(1)
+
+6.Displays a 4x4 grid of hydrogen molecules,
+each consisting of two bonded hydrogen atoms, animates their entrance with a fade-in, rotates the entire group by 90 degrees, and then fades them out of the scene.
+code:
+from manim import *
+
+class MoleculeAnimation(Scene):
+    def construct(self):
+
+        image = ImageMobject("h2_molecule.jpg")
+        image.scale(0.5)
+        image.to_corner(UR)
+        self.play(FadeIn(image), run_time=1)
+
+        molecule_group = self.create_molecule_grid(rows=4, cols=4)
+
+        self.play(FadeIn(molecule_group, shift=UP))
+        self.wait(1)
+        self.play(Rotate(molecule_group, angle=PI/2))
+        self.wait(1)
+        self.play(FadeOut(molecule_group, shift=DOWN))
+
+    def hydrogen_molecule(self) -> Mobject:
+
+        left_hydrogen = circle_with_text(0.25, "H", color=BLUE, font_size=24, font_color=WHITE, stroke_width=1, fill_color=BLUE)
+        right_hydrogen = circle_with_text(0.25, "H", color=BLUE, font_size=24, font_color=WHITE, stroke_width=1, fill_color=BLUE)
+        right_hydrogen.next_to(left_hydrogen, RIGHT, buff=0.5)
+        bond = Line(left_hydrogen.get_center(), right_hydrogen.get_center()).set_stroke(width=2)
+        return VGroup(left_hydrogen, bond, right_hydrogen)
+
+    def create_molecule_grid(self, rows: int, cols: int) -> VGroup:
+
+        molecule_group = VGroup()
+        for i in range(rows):
+        for j in range(cols):
+        molecule = self.hydrogen_molecule()
+        molecule.move_to(np.array([i - rows / 2, j - cols / 2, 0]))
+        molecule_group.add(molecule)
+        return molecule_group
+
+    def circle_with_text(self, r: float, txt: str, color=WHITE, font_size: int = 24, font_color=WHITE, stroke_width: int = 2, fill_color=WHITE) -> Mobject:
+        c = Circle(radius=r, color=color)
+        c.set_fill(color=fill_color, opacity=1)
+        c.set_stroke(color=color, width=stroke_width)
+        t = Text(txt, font_size=font_size, color=font_color)
+        t.move_to(c.get_center())
+        return VGroup(c, t)
