@@ -1,9 +1,9 @@
 import os
 
 
-os.environ["OPIK_API_KEY"] = "rSO4JTuPfm0bmR7St7AExjLCQ" 
+os.environ["OPIK_API_KEY"] = "OPIK_API_KEY"
 os.environ["OPIK_WORKSPACE"] = "mohammed-abdul-kalam-khan"
-os.environ["GOOGLE_API_KEY"] = "AIzaSyDScMch20fbg4_DzflmITjyoXarFyMabXg"
+os.environ["GOOGLE_API_KEY"] = "GOOGLE_API_KEY"
 
 
 # This is the message with which the system opens the conversation.
