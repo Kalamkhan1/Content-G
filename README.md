@@ -60,6 +60,9 @@ The process includes:
 - Abdul Hai
 - Mahammed Saadullah
 
+Check out Imagio, a advanced variant of content-G that uses a custom model for video generation.
+[Link](https://github.com/S-Hasanuddin/IMAGIO)
+
 ### License
 Apache License 2.0
 
@@ -70,4 +73,5 @@ Actively under development
 
 check out the following files in repository
 final_output.mp4
+
 
